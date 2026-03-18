@@ -4,11 +4,12 @@
   "description": "Movie Booking System",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon",
+    "dev": "nodemon src/server.ts",
     "build": "tsc",
     "start": "node dist/server.ts",
     "seed:theaters": "ts-node src/scripts/seed-theaters.ts",
-    "seed:movies": "ts-node src/scripts/seed-movies.ts"
+    "seed:movies": "ts-node src/scripts/seed-movies.ts",
+    "seed:shows": "ts-node src/scripts/seed-shows.ts"
   },
   "author": "ProgrammingWithAmrit",
   "license": "ISC",

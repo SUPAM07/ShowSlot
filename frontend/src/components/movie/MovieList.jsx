@@ -1,0 +1,38 @@
+import React from "react";
+import MovieCard from "../../components/movie/MovieCard";
+import { languages, allMovies } from "../../utils/constants";
+
+const MovieList = () => {
+  return (
+    <div className="w-full md:w-3/4 p-4">
+      {/* Language Chips */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        {languages.map((lang, i) => (
+          <span
+            key={i}
+            className="bg-white border border-gray-200 text-[#f74362] px-3 py-1 text-sm rounded hover:bg-gray-100 cursor-pointer transition-colors"
+          >
+            {lang}
+          </span>
+        ))}
+      </div>
+
+      {/* Section Header */}
+      <div className="flex justify-between items-center bg-white px-6 py-6 rounded mb-6 shadow-sm">
+        <h3 className="font-semibold text-xl">Movies in Kolkata</h3>
+        <a href="#" className="text-red-500 text-sm font-medium hover:underline">
+          Explore Upcoming Movies →
+        </a>
+      </div>
+
+      {/* Grid Rendering */}
+      <div className="flex flex-wrap gap-6">
+        {allMovies.map((movie) => (
+          <MovieCard key={movie.id} movie={movie} />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default MovieList;
