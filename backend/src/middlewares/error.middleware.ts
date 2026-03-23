@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { ZodError } from "zod";
+import { isHttpError } from "http-errors";
 
 export const globalErrorHandler = (
   err: unknown,
@@ -23,6 +24,10 @@ export const globalErrorHandler = (
       field: e.path.join("."),
       message: e.message,
     }));
+  } else if (isHttpError(err)) {
+    // HTTP errors created by http-errors library (e.g. createHttpError(401, ...))
+    statusCode = err.status;
+    message = err.message;
   } else if (err instanceof Error) {
     message = err.message;
   }

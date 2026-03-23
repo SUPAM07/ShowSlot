@@ -85,24 +85,37 @@ const SeatLayout = () => {
   useEffect(() => {
     setSelectedSeats([]);
     socket.emit("join-show", {showId});
-    socket.on("locked-seats-initials", ({seatIds}) => {
-      setLockedSeats(seatIds);
-    })
 
-    socket.on("seat-locked", ({seatIds, showId: incommingShowId}) => {
+    const handleLockedSeatsInitials = ({seatIds}) => {
+      setLockedSeats(seatIds);
+    };
+
+    const handleSeatLocked = ({seatIds, showId: incommingShowId}) => {
       if(incommingShowId !== showId) return;
       setLockedSeats((prev) => [...new Set([...prev, ...seatIds])]);
-    })
+    };
 
-    socket.on("seat-unlocked", ({seatIds, showId:incommingShowId}) => {
+    const handleSeatUnlocked = ({seatIds, showId: incommingShowId}) => {
       if(incommingShowId !== showId) return;
       setLockedSeats((prev) => prev.filter((id) => !seatIds.includes(id)));
-    })
+    };
 
-    socket.on("seat-locked-failed", ({showId, requested: seatIds, alreadyLocked}) => {
+    const handleSeatLockedFailed = ({alreadyLocked}) => {
       toast.error(`Some seats are already locked: ${alreadyLocked.join(", ")}`);
-    })
-  }, [showId])
+    };
+
+    socket.on("locked-seats-initials", handleLockedSeatsInitials);
+    socket.on("seat-locked", handleSeatLocked);
+    socket.on("seat-unlocked", handleSeatUnlocked);
+    socket.on("seat-locked-failed", handleSeatLockedFailed);
+
+    return () => {
+      socket.off("locked-seats-initials", handleLockedSeatsInitials);
+      socket.off("seat-locked", handleSeatLocked);
+      socket.off("seat-unlocked", handleSeatUnlocked);
+      socket.off("seat-locked-failed", handleSeatLockedFailed);
+    };
+  }, [showId, setSelectedSeats])
   /* Socket.io Code ends */
 
   const handleSlotNav = (slot) => {
