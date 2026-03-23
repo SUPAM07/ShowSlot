@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Header from "../components/seat-layout/Header.jsx";
 import dayjs from "dayjs";
 import { calculateTotalPrice, groupSeatsByType } from "../utils";
@@ -21,12 +21,32 @@ const Checkout = () => {
   const { location } = useLocation();
   const { selectedSeats, shows: showData, setSelectedSeats } = useSeatContext();
   const { base, tax, total } = calculateTotalPrice(selectedSeats);
+  const selectedSeatsRef = useRef(selectedSeats);
+  useEffect(() => {
+    selectedSeatsRef.current = selectedSeats;
+  }, [selectedSeats]);
 
   useEffect(() => {
     if (!showData || selectedSeats.length === 0) {
       navigate("/");
     }
-  }, []);
+  }, [showData, selectedSeats, navigate]);
+
+  useEffect(() => {
+    // Redirect to home if seats get unlocked externally (e.g. socket disconnection)
+    const handleSeatUnlocked = ({ seatIds }) => {
+      const ourSeatsUnlocked = selectedSeatsRef.current.some((id) => seatIds.includes(id));
+      if (ourSeatsUnlocked) {
+        toast.error("Your seat selection was lost. Please try again.");
+        navigate("/");
+      }
+    };
+
+    socket.on("seat-unlocked", handleSeatUnlocked);
+    return () => {
+      socket.off("seat-unlocked", handleSeatUnlocked);
+    };
+  }, [navigate]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -45,7 +65,7 @@ const Checkout = () => {
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [showData?._id, user?._id, navigate]);
 
   const handlePayment = async () => {
     if (!isAuthenticated) {
