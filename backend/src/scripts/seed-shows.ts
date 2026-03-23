@@ -35,30 +35,28 @@ const toDateWithTime = (baseDate: Date, timeStr: string) => {
 };
 
 export const seedShow = async () => {
-  const movieIds = ["69bb03b85af0423d52b0e5e0", "69bb03b85af0423d52b0e5df"];  
-  const movies = await MovieModel.find({ _id: { $in: movieIds } });
-  const theatres = await TheaterModel.find({ state: "West Bengal" });
+  const movies = await MovieModel.find({});
+  const theatres = await TheaterModel.find({});
 
   if (!movies.length || !theatres.length) {
-    console.error("Movies or theatres not found. Please check IDs or state name.");
+    console.error("Movies or theatres not found. Please ensure they are seeded first.");
     return;
   }
 
   const today = dayjs().startOf("day");
+  const showsToInsert = [];
 
   for (const movie of movies) {
     for (const theatre of theatres) {
-      for (let d = 0; d < 2; d++) { // ✅ today and tomorrow
+      // ✅ next 7 days for every movie and theatre combo
+      for (let d = 0; d < 7; d++) { 
         const showDate = today.add(d, "day");
         const formattedDate = showDate.format("DD-MM-YYYY");
         const numShows = Math.floor(Math.random() * 3) + 2; // 2–4 shows
         const selectedSlots = fixedTimeSlots.slice(0, numShows);
 
         for (const slot of selectedSlots) {
-          const startTime = toDateWithTime(showDate.toDate(), slot.start);
-          const endTime = toDateWithTime(showDate.toDate(), slot.end);
-
-          const newShow = new ShowModel({
+          showsToInsert.push({
             movie: movie._id,
             theater: theatre._id,
             location: theatre.state,
@@ -69,17 +67,22 @@ export const seedShow = async () => {
             priceMap: generatePriceMap(),
             seatLayout: generateSeatLayout(),
           });
-
-          await newShow.save();
-          console.log(
-            `🎬 Show created for ${movie.title} at ${theatre.name} on ${formattedDate} (${slot.start} - ${slot.end})`
-          );
         }
       }
     }
   }
 
-  console.log("✅ Show seeding completed for selected movies in West Bengal.");
+  console.log(`Inserting ${showsToInsert.length} shows...`);
+  
+  // Batch insert to avoid overwhelming memory/db
+  const BATCH_SIZE = 1000;
+  for (let i = 0; i < showsToInsert.length; i += BATCH_SIZE) {
+    const batch = showsToInsert.slice(i, i + BATCH_SIZE);
+    await ShowModel.insertMany(batch);
+    console.log(`Inserted ${i + batch.length} of ${showsToInsert.length} shows`);
+  }
+
+  console.log("✅ Show seeding completed for all movies and theaters.");
 };
 
 mongoose

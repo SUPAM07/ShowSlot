@@ -1,15 +1,35 @@
 import React from "react";
-import { movies } from "../utils/constants";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { getRecommendedMovies } from "../apis";
+import { useNavigate } from "react-router-dom";
+import { useLocation } from "../context/LocationContext";
+
 const Recommended = () => {
+
+  const navigate = useNavigate();
+  const { location } = useLocation();
+
+const handleNavigate = (movie) => {
+  const slug = movie.title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "") // remove special chars
+    .trim()
+    .replace(/\s+/g, "-"); // replace spaces with -
+
+  navigate(`/movies/${location}/${slug}/${movie._id}/ticket`);
+};
+
+  //api call
   const {
     data: recMovies,
     isLoading,
     isError,
   } = useQuery({
     queryKey: ["recommended-movies"],
-    queryFn: getRecommendedMovies,
+    queryFn: async()=> {
+      return await getRecommendedMovies();
+    },
+    placeholderData:keepPreviousData
   });
 
   // 🔄 Loading state
@@ -20,6 +40,7 @@ const Recommended = () => {
       </div>
     );
   }
+    
 
   // ❌ Error state
   if (isError) {
@@ -31,6 +52,12 @@ const Recommended = () => {
       </div>
     );
   }
+    /*
+   if (isError){
+    console.log("something went wrong");
+   };
+   console.log(recMovies);
+   */
 
   return (
     <div className="w-full py-6 bg-white">
@@ -41,20 +68,21 @@ const Recommended = () => {
           <h2 className="text-2xl font-semibold">
             Recommended Movies
           </h2>
-          <span className="text-md text-red-500 cursor-pointer hover:underline font-medium">
+          <span onClick={()=>navigate("/movies")}
+           className="text-md text-red-500 cursor-pointer hover:underline font-medium">
             See All
           </span>
         </div>
 
         {/* Movies Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          {recMovies?.map((movie, i) => (
-            <div key={i} className="rounded overflow-hidden cursor-pointer hover:scale-105 transition">
+          {recMovies?.data?.topMovies?.map((movie, i) => (
+            <div key={i} onClick={()=>handleNavigate(movie)} className="rounded overflow-hidden cursor-pointer hover:scale-105 transition">
               
               {/* Poster */}
               <div className="relative">
                 <img
-                  src={movie.poster || movie.img}
+                  src={movie.posterUrl || movie.img}
                   alt={movie.title}
                   className="w-full h-72 object-cover rounded"
                 />
@@ -72,7 +100,7 @@ const Recommended = () => {
                   {movie.title}
                 </h3>
                 <p className="text-md text-gray-500">
-                  {movie.genres?.join(", ") || "Drama"}
+                  {movie.genre?.join(", ")}
                 </p>
               </div>
 
